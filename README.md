@@ -7,11 +7,23 @@ Each skill lives in its own folder under [`skills/`](skills/) as a
 `SKILL.md` file with YAML front-matter (`name`, `description`,
 `allowed-tools`) followed by the skill's workflow instructions.
 
+This repo also vendors the [`patterns/`](patterns/) catalogue from
+[awesome-agentic-patterns](https://github.com/nibzard/awesome-agentic-patterns)
+(by [@nibzard](https://github.com/nibzard) and contributors, Apache-2.0
+licensed — see [`patterns/LICENSE`](patterns/LICENSE)) so the pattern-related
+skills below have something to match/create/update against without needing
+that repo cloned separately. That repo remains the canonical, actively
+maintained source — `patterns/` here is an unmodified snapshot, not a live
+copy, and may go stale.
+
 ## Skills
 
 | Skill | What it does |
 |---|---|
-| [`repomix-pattern-extraction`](skills/repomix-pattern-extraction/SKILL.md) | Extracts agentic AI design patterns from a [repomix](https://github.com/yamadashy/repomix) XML dump of a codebase: parses the packed repo, triages files for concrete agentic mechanisms, confirms candidates with the user, then matches/creates/updates pattern entries. |
+| [`repomix-pattern-extraction`](skills/repomix-pattern-extraction/SKILL.md) | Extracts agentic AI design patterns from a [repomix](https://github.com/yamadashy/repomix) XML dump of a codebase: parses the packed repo, triages files for concrete agentic mechanisms, confirms candidates with the user, then matches/creates/updates pattern entries. Self-contained — works against the bundled `patterns/`. |
+| [`create-pattern`](skills/create-pattern/SKILL.md) | Analyzes a source (blog post, PDF, YouTube video, codebase, pasted text) for agentic patterns, matches it against the existing catalogue in `patterns/`, and creates a new pattern or updates an existing one. |
+| [`arxiv-pattern-discovery`](skills/arxiv-pattern-discovery/SKILL.md) | Searches arXiv for papers describing agentic AI patterns, scores them with a quality rubric, and surfaces candidates for `create-pattern` to extract. |
+| [`pr-review`](skills/pr-review/SKILL.md) | Reviews pull requests that add or modify pattern files against the catalogue's contribution policy (non-promotional, materially novel, correct front-matter). |
 
 ## How to use these skills
 
