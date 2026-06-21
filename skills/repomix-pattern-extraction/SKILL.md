@@ -1,6 +1,6 @@
 ---
 name: repomix-pattern-extraction
-description: Extract agentic AI design patterns from a repomix-generated XML snapshot of a codebase. Use when the user provides a repomix XML file (a packed repo dump) and asks to find, extract, or mine agentic patterns from it.
+description: Run repomix against a codebase (local path or remote git URL) or accept an existing repomix XML dump, mine it for agentic AI design patterns, score each candidate's confidence and match against the existing pattern catalogue, then write or update pattern files. Use when the user gives a repo/URL/XML and asks to find, extract, scan, or mine agentic patterns from it.
 allowed-tools:
   - Read
   - Write
@@ -11,28 +11,62 @@ allowed-tools:
 
 # Repomix Pattern Extraction
 
-Mine a [repomix](https://github.com/yamadashy/repomix) XML dump — a single file
-packing an entire repository's directory structure and file contents — for
-reusable agentic AI design patterns, and write each one out as a standalone
-Markdown pattern file. Self-contained: no other skill or repo is required.
+Generate (or accept) a [repomix](https://github.com/yamadashy/repomix) XML
+dump — a single file packing an entire repository's directory structure and
+file contents — mine it for reusable agentic AI design patterns, score each
+candidate against the existing catalogue, and write confirmed ones out as
+standalone Markdown pattern files. Self-contained: no other skill or repo is
+required.
 
 ## Overview
 
-**Input:** Path to a repomix XML file representing a codebase that implements
-(or contains) an agentic AI system.
+**Input:** one of:
+- A local directory (path to a codebase to scan)
+- A remote git URL (GitHub/GitLab repo to scan)
+- An already-generated repomix XML file path
 
 **Process:**
+0. If given a directory or URL (not an XML file), run `repomix` to generate
+   the XML dump first
 1. Parse the XML into a file inventory + contents
 2. Triage files to find concrete, nameable agentic mechanisms (not generic
    LLM-wrapper boilerplate)
-3. Show the candidate mechanisms to the user and get confirmation before
-   writing anything — a single codebase can yield many low-value candidates
-4. For each confirmed candidate, check for existing similar patterns and
-   either create a new pattern file or update an existing one
-5. Report what was written
+3. Score each candidate: confidence it's a genuine pattern (with
+   justification) + best-matching existing pattern in the catalogue (with
+   match confidence)
+4. Show the scored list to the user and get confirmation before writing
+   anything — a single codebase can yield many low-value candidates
+5. For each confirmed candidate, create a new pattern file or update the
+   matched existing one
+6. Report what was written
 
 **Output location:** a `patterns/` folder in the current working directory
 (created if it doesn't exist), unless the user specifies otherwise.
+
+---
+
+## Phase 0: Generate the repomix XML (skip if already given an XML file)
+
+If the input is a local directory or a remote URL, run repomix via `npx` (no
+global install required) and write the output to a temp file:
+
+```bash
+# local codebase
+npx -y repomix <path-to-codebase> -o /tmp/repomix-<slug>.xml
+
+# remote repo (GitHub/GitLab URL or org/repo shorthand)
+npx -y repomix --remote <git-url-or-org/repo> -o /tmp/repomix-<slug>.xml
+```
+
+- `<slug>` — derive from the repo/dir name so the temp file is identifiable
+  if multiple scans happen in one session.
+- If the user wants to scan a *subset* of a large repo (e.g. just `src/agent`),
+  pass `--include "<glob>"` rather than scanning the whole tree.
+- If `npx repomix` fails (not installed, network blocked, private repo
+  without auth), report the exact error to the user and ask how to proceed —
+  don't silently fall back to manually walking the repo with `Glob`/`Read`,
+  since that defeats the point of using repomix's packing/compression.
+- Once generated, proceed to Phase 1 with the resulting XML path.
 
 ---
 
@@ -99,34 +133,69 @@ patterns, they're plumbing.
 
 ---
 
-## Phase 3: Confirm with the user
+## Phase 3: Score candidates against the existing catalogue
 
-Before writing any files, present the candidate list (title, category,
-1-line problem/solution) and ask which ones to pursue. Use AskUserQuestion if
-there are 2-4 strong candidates and the choice is genuinely the user's; for
-longer lists, just present the list in text and ask which to proceed with.
+For every candidate from Phase 2, compute two independent scores before
+showing anything to the user.
 
-Do not auto-create patterns for every mechanism found — favor materially
-novel, non-repetitive candidates over restatements of the same idea.
+### 3a. Pattern-confidence score — is this actually a pattern?
+
+Rate how confident you are that the candidate is a genuine, reusable agentic
+mechanism (not boilerplate, not a restatement of generic LLM usage):
+
+- **High** — concrete, non-trivial mechanism with clear control/data flow,
+  visibly built to solve a specific failure mode; would generalize to other
+  codebases.
+- **Medium** — a real mechanism, but thin, implicit, or only partially
+  distinguishing (e.g. a fairly standard retry-with-backoff, a memory store
+  with no eviction/ranking logic).
+- **Low** — mostly plumbing or a one-off; flag but don't recommend pursuing.
+
+Justification must cite the actual file(s)/function(s) and what specifically
+makes it concrete (or thin) — not a generic restatement of the category.
+
+### 3b. Catalogue-match score — does this already exist?
+
+`Glob patterns/*.md` (create the `patterns/` folder if it's missing — there's
+nothing to match against yet). For each existing pattern, compare against the
+candidate using these signals (mirrors the scoring used by the `create-pattern`
+skill, for consistency across the repo):
+
+**Primary signals (30% each):** same problem statement / same solution
+mechanism / same category.
+**Secondary signals (10% each):** tag overlap / same source-repo or author /
+similar title.
+
+```
+Score = Σ(matching_signals × weights)
+```
+
+- All 3 primary match → **90%+** → near-certain duplicate, update don't create.
+- 2 primary + 1+ secondary → **70–90%** → likely duplicate, lean update.
+- 1 primary + 2+ secondary → **50–70%** → ambiguous, ask the user.
+- 0–1 primary only → **<50%** → new pattern.
+
+Record the top match (slug + score + which signals matched) even when the
+score is low, so the user can see what was checked against.
 
 ---
 
-## Phase 4: Match against existing patterns
+## Phase 4: Present the scored list and confirm
 
-`Glob patterns/*.md` (create the `patterns/` folder if it's missing — there's
-nothing to match against yet). For each existing pattern found, read its
-front-matter and compare against the candidate:
+Before writing any files, present a table like:
 
-- Same problem statement?
-- Same solution mechanism?
-- Same category?
-- Overlapping tags?
+| # | Candidate | Category | Pattern confidence | Justification | Best match | Match score |
+|---|-----------|----------|--------------------|----------------|------------|-------------|
+| 1 | Title | Category | High/Med/Low | 1-line, file-cited | slug or "none" | NN% |
 
-Score roughly: 2+ of (problem, solution, category) matching → likely the same
-pattern, lean toward updating it instead of creating a duplicate. Otherwise,
-create new.
+Then recommend an action per row using Phase 3b's thresholds (create new /
+update existing / ask), and ask the user which rows to pursue. Use
+AskUserQuestion if there are 2-4 strong candidates and the choice is genuinely
+the user's; for longer lists, present the table in text and ask which rows to
+proceed with.
 
-If genuinely unsure, ask the user rather than guessing.
+Do not auto-write for every row — favor materially novel, non-repetitive,
+high pattern-confidence candidates over low-confidence or near-duplicate ones.
 
 ---
 
@@ -202,16 +271,18 @@ Read the matched file, then:
 
 ```
 Extracted N pattern(s) from <repomix-file>:
-✅ Created: patterns/{slug}.md — {title}
-✅ Updated: patterns/{slug}.md — added source to based_on
+✅ Created: patterns/{slug}.md — {title} (pattern confidence: High)
+✅ Updated: patterns/{slug}.md — added source to based_on (matched at NN%)
 
-Skipped candidates (not pursued): {titles}
+Skipped candidates (not pursued): {titles, with pattern-confidence/match score}
 ```
 
 ---
 
 ## Tips
 
+- `npx -y repomix` avoids interactive install prompts; pass `-o` explicitly
+  so you know exactly where the dump landed.
 - A repomix dump of a large monorepo can be huge — always inventory paths
   before reading contents, and read selectively.
 - Prefer the mechanism's *own* implementation details over generic
