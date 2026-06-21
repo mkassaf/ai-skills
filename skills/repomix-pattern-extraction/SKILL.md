@@ -13,8 +13,8 @@ allowed-tools:
 
 Mine a [repomix](https://github.com/yamadashy/repomix) XML dump — a single file
 packing an entire repository's directory structure and file contents — for
-reusable agentic AI design patterns, then hand each candidate off to the same
-matching/create/update workflow used by `create-pattern`.
+reusable agentic AI design patterns, and write each one out as a standalone
+Markdown pattern file. Self-contained: no other skill or repo is required.
 
 ## Overview
 
@@ -27,13 +27,12 @@ matching/create/update workflow used by `create-pattern`.
    LLM-wrapper boilerplate)
 3. Show the candidate mechanisms to the user and get confirmation before
    writing anything — a single codebase can yield many low-value candidates
-4. For each confirmed candidate, run `create-pattern`'s Phase 2-6 (extract
-   metadata, match against `patterns/*.md`, create or update)
-5. Rebuild pattern data and report results
+4. For each confirmed candidate, check for existing similar patterns and
+   either create a new pattern file or update an existing one
+5. Report what was written
 
-This skill only handles ingestion + triage of the repomix XML. Once a
-candidate is confirmed, defer to `create-pattern`'s matching/decision/write
-logic rather than duplicating it.
+**Output location:** a `patterns/` folder in the current working directory
+(created if it doesn't exist), unless the user specifies otherwise.
 
 ---
 
@@ -74,8 +73,8 @@ inspect the actual file first.
 
 ## Phase 2: Identify agentic mechanisms
 
-Triage what you read into the repo's existing category set so each candidate
-maps cleanly onto the catalogue:
+Triage what you read into a fixed category set so each candidate maps
+cleanly onto a catalogue:
 
 - Orchestration & Control
 - Context & Memory
@@ -107,41 +106,99 @@ Before writing any files, present the candidate list (title, category,
 there are 2-4 strong candidates and the choice is genuinely the user's; for
 longer lists, just present the list in text and ask which to proceed with.
 
-Do not auto-create patterns for every mechanism found — a single agentic
-codebase often surfaces several candidates of wildly different novelty/value,
-and the repo's contribution policy requires submissions to be materially
-novel and non-repetitive.
+Do not auto-create patterns for every mechanism found — favor materially
+novel, non-repetitive candidates over restatements of the same idea.
 
 ---
 
-## Phase 4: Extract, match, write — per confirmed candidate
+## Phase 4: Match against existing patterns
 
-For each confirmed mechanism, follow `create-pattern`'s existing workflow
-rather than re-deriving it:
+`Glob patterns/*.md` (create the `patterns/` folder if it's missing — there's
+nothing to match against yet). For each existing pattern found, read its
+front-matter and compare against the candidate:
 
-1. **Phase 3 (match)** — Glob `patterns/*.md`, compare problem/solution/
-   category/tags against the candidate, score confidence.
-2. **Phase 4 (decision)** — >80% confidence → update existing pattern's
-   `based_on`/References/content; <50% → create new; 50-80% → ask the user.
-3. **Phase 5a/5b (write)** — use the same front-matter schema, category list,
-   and status values as `create-pattern` (title, status, authors, based_on,
-   category, source, tags; Problem/Solution/References sections). Set
-   `source` to the repo's actual URL if known from the repomix dump (e.g. a
-   `package.json`/`README` repository field), otherwise ask the user for it —
-   don't fabricate a URL.
-4. Remember the CLAUDE.md formatting rule: always put a blank line after a
-   header before a bullet list, or Astro won't render it as `<ul><li>`.
+- Same problem statement?
+- Same solution mechanism?
+- Same category?
+- Overlapping tags?
+
+Score roughly: 2+ of (problem, solution, category) matching → likely the same
+pattern, lean toward updating it instead of creating a duplicate. Otherwise,
+create new.
+
+If genuinely unsure, ask the user rather than guessing.
 
 ---
 
-## Phase 5: Build & report
+## Phase 5: Write the pattern file
 
-```bash
-cd apps/web && bun run build-data
+### New pattern
+
+Slug the title (lowercase, spaces → hyphens, strip punctuation) and write
+`patterns/{slug}.md`:
+
+```markdown
+---
+title: "Title"
+status: emerging
+authors: ["Your Name (@yourusername)"]
+based_on: ["Repo/Project Name (source URL)"]
+category: "Category Name"
+source: "https://github.com/org/repo"
+tags: [tag1, tag2, tag3]
+---
+
+## Problem
+
+[Concrete problem this mechanism solves]
+
+## Solution
+
+[How the mechanism actually works, in the implementation's own terms]
+
+- Key components: [list]
+- Mechanism: [describe the control flow / data flow]
+
+## How to use it
+
+[When to reach for this, and how to adapt it]
+
+## Trade-offs
+
+* **Pros:** [benefits]
+* **Cons:** [drawbacks]
+
+## References
+
+* [Repo name](source URL)
 ```
 
-Confirm the JSON files updated under `apps/web/public/patterns/` with no
-errors, then summarize for the user:
+Always put a blank line after a heading before a bullet list — some Markdown
+renderers (including static-site generators like Astro) won't turn
+`**Header:**\n- Item` into a real `<ul>` without it.
+
+Status values: `proposed`, `emerging`, `established`,
+`validated-in-production`, `best-practice`, `experimental-but-awesome`,
+`rapidly-improving`. Default to `emerging` unless the codebase shows strong
+evidence of production use.
+
+Set `source` to the repo's actual URL if it's discoverable in the repomix
+dump (e.g. a `package.json` `repository` field, a README badge/link).
+Otherwise ask the user — don't fabricate a URL.
+
+### Updating an existing pattern
+
+Read the matched file, then:
+- Append the new source to `based_on` (skip if it's already there)
+- Add any genuinely new tags
+- Append to `## References`
+- If the new source adds real insight (not just another citation), append a
+  short attributed addition to `## Solution` / `## Trade-offs` — never delete
+  or overwrite existing content
+
+---
+
+## Phase 6: Report
 
 ```
 Extracted N pattern(s) from <repomix-file>:
@@ -149,11 +206,6 @@ Extracted N pattern(s) from <repomix-file>:
 ✅ Updated: patterns/{slug}.md — added source to based_on
 
 Skipped candidates (not pursued): {titles}
-
-Next steps:
-1. Review the new/updated pattern file(s)
-2. cd apps/web && bun run dev
-3. git add patterns/{slug}.md
 ```
 
 ---
@@ -169,3 +221,7 @@ Next steps:
   subsystem in the confirmation step so the user can approve per-subsystem.
 - If repomix XML parsing is ambiguous or malformed, say so and ask the user
   rather than guessing at tag structure.
+- If you're running this inside a repo that already has its own pattern
+  catalogue/conventions (e.g. a different front-matter schema or output
+  folder), follow that repo's existing conventions instead of the defaults
+  above.
