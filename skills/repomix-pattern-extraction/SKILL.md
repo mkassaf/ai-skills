@@ -47,8 +47,18 @@ required.
 
 ## Phase 0: Generate the repomix XML (skip if already given an XML file)
 
-If the input is a local directory or a remote URL, run repomix via `npx` (no
-global install required) and write the output to a temp file:
+If the input is a local directory, first check for an existing
+`repomix-output.xml` at the root of that directory (repomix's default output
+filename when run without `-o`). If found, use it directly and skip
+generation — don't waste time/tokens regenerating a dump that already exists.
+Mention to the user which existing file you're reusing in case it's stale.
+
+Otherwise (no existing dump found, or input is a remote URL), run repomix via
+`npx` (no global install required) and write the output to a temp file.
+**Just run it — don't stop to ask for confirmation first.** Scanning the
+whole repo is the correct default; only narrow to a subdirectory if the user
+already named one in their request, or if the full-repo dump comes back so
+large that Phase 1's inventory step becomes impractical.
 
 ```bash
 # local codebase
@@ -196,6 +206,16 @@ proceed with.
 
 Do not auto-write for every row — favor materially novel, non-repetitive,
 high pattern-confidence candidates over low-confidence or near-duplicate ones.
+
+Alongside the table, always write the same rows to `patterns/scan-results.csv`
+(create the `patterns/` folder if missing; overwrite on each run) with columns:
+
+```
+candidate,category,pattern_confidence,justification,best_match,match_score,recommended_action
+```
+
+Quote any field containing a comma. This gives the user a durable, sortable
+record of the scan independent of the chat transcript.
 
 ---
 
