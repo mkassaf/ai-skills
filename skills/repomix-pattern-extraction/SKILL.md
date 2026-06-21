@@ -25,6 +25,10 @@ required.
 - A remote git URL (GitHub/GitLab repo to scan)
 - An already-generated repomix XML file path
 
+Optionally followed by a CSV filename/path for the Phase 4 scan report
+(e.g. `/repomix-pattern-extraction repomix-output.xml my-scan.csv`). If
+omitted, default to `patterns/scan-results.csv`.
+
 **Process:**
 0. If given a directory or URL (not an XML file), run `repomix` to generate
    the XML dump first
@@ -223,8 +227,10 @@ proceed with.
 Do not auto-write for every row — favor materially novel, non-repetitive,
 high pattern-confidence candidates over low-confidence or near-duplicate ones.
 
-Alongside the table, always write the same rows to `patterns/scan-results.csv`
-(create the `patterns/` folder if missing; overwrite on each run) with columns:
+Alongside the table, always write the same rows to a CSV report — use the
+filename/path the user passed as the skill's second argument, or default to
+`patterns/scan-results.csv` if none was given (create parent folders as
+needed; overwrite on each run) — with columns:
 
 ```
 candidate,category,pattern_confidence,justification,best_match,match_score,recommended_action
