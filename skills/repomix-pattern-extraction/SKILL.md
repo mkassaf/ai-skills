@@ -166,10 +166,26 @@ makes it concrete (or thin) — not a generic restatement of the category.
 
 ### 3b. Catalogue-match score — does this already exist?
 
-`Glob patterns/*.md` (create the `patterns/` folder if it's missing — there's
-nothing to match against yet). For each existing pattern, compare against the
-candidate using these signals (mirrors the scoring used by the `create-pattern`
-skill, for consistency across the repo):
+Build the comparison catalogue from two sources, in this order:
+
+1. `Glob patterns/*.md` in the current working directory — this is the
+   project's own live catalogue and always wins if it has entries.
+2. If that's empty or missing, fall back to the catalogue bundled with this
+   skill itself: `Glob <skill-dir>/patterns/*.md`, where `<skill-dir>` is the
+   directory this `SKILL.md` lives in (e.g.
+   `.claude/skills/repomix-pattern-extraction/patterns/` or
+   `~/.claude/skills/repomix-pattern-extraction/patterns/`). This bundled copy
+   ships with the skill so matching works out of the box even in a project
+   that has never run this skill before — don't skip this fallback just
+   because the cwd has no `patterns/` folder.
+
+Never write new/updated pattern files into the bundled catalogue — Phase 5
+always writes to the cwd's `patterns/` folder (creating it if missing), even
+when matching was done against the bundled fallback.
+
+For each existing pattern, compare against the candidate using these
+signals (mirrors the scoring used by the `create-pattern` skill, for
+consistency across the repo):
 
 **Primary signals (30% each):** same problem statement / same solution
 mechanism / same category.
