@@ -1,0 +1,20 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(git add *)",
+      "Bash(git commit -m ' *)",
+      "Bash(git push *)",
+      "Bash(cp /Users/assaf/phd/ai-projects/ai-skills/skills/repomix-pattern-extraction/SKILL.md /Users/assaf/.claude/skills/repomix-pattern-extraction/SKILL.md)",
+      "Read(//Users/assaf/.claude/skills/repomix-pattern-extraction/**)",
+      "Read(//Users/assaf/.claude/skills/**)",
+      "Read(//Users/assaf/.claude/**)",
+      "Bash(cp /Users/assaf/phd/ai-projects/ai-skills/skills/repomix-pattern-extraction/SKILL.md ~/.claude/skills/repomix-pattern-extraction/SKILL.md)",
+      "Bash(cp -r /Users/assaf/phd/ai-projects/ai-skills/skills/repomix-pattern-extraction/patterns ~/.claude/skills/repomix-pattern-extraction/)",
+      "Bash(git commit *)",
+      "Bash(git fetch *)"
+    ]
+  },
+  "enabledMcpjsonServers": [
+    "semantic-scholar-mcp"
+  ]
+}
