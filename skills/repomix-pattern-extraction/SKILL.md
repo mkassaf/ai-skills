@@ -302,13 +302,25 @@ auto-write every row.
 Both carry the same columns/keys:
 
 ```
-candidate, category, pattern_confidence, evidence_path, evidence_lines,
-evidence_snippet, justification, best_match, verdict, recommended_action,
-source_url, source_commit, repomix_version
+candidate, repo_name, category, pattern_confidence, evidence_path,
+evidence_lines, evidence_snippet, justification, best_match, verdict,
+recommended_action, source_url, source_commit, repomix_version
 ```
 
-Provenance fields (`source_*`, `repomix_version`) make the scan reproducible
-independent of the chat transcript.
+`repo_name` is the scanned repo's short name — `org/repo` for a remote scan,
+or the local directory's basename for a local scan — independent of the full
+`source_url`. Carrying it as its own column (rather than only inside
+`source_url`) makes the report sortable/filterable by repo once you've run
+this skill across more than one, and matters once a single CSV/JSONL
+accumulates rows from multiple scans (see append note below).
+
+Provenance fields (`repo_name`, `source_*`, `repomix_version`) make the scan
+reproducible independent of the chat transcript.
+
+If the user-supplied report path already exists from a prior scan, append
+new rows to it (write the header only once) rather than overwriting — this is
+what makes `repo_name` useful as a filter across an accumulated multi-repo
+report. Default timestamped paths always start fresh.
 
 ---
 
