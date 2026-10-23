@@ -1,0 +1,79 @@
+{
+  "title": "CLOUD BACKUP",
+  "duration": 29.0,
+  "scenes": [
+    {
+      "start": 0.0,
+      "end": 7.0,
+      "layout": "pip",
+      "section": "THE IDEA",
+      "headline": "A safety copy for your files",
+      "subhead": "A backup helps when a device is lost or damaged.",
+      "cards": [
+        {
+          "start": 1.0,
+          "title": "DEVICE LOST",
+          "body": "One copy is at risk",
+          "accent": "cranberry"
+        },
+        {
+          "start": 3.3,
+          "title": "BACKUP",
+          "body": "A copy lives elsewhere",
+          "accent": "violet"
+        }
+      ]
+    },
+    {
+      "start": 7.0,
+      "end": 20.0,
+      "layout": "full",
+      "section": "THE PROCESS",
+      "headline": "Save. Sync. Restore.",
+      "subhead": "A cloud backup keeps another copy of selected files.",
+      "cards": [
+        {
+          "start": 8.2,
+          "title": "SAVE",
+          "body": "Choose the files",
+          "accent": "violet"
+        },
+        {
+          "start": 11.0,
+          "title": "SYNC",
+          "body": "Copy later changes",
+          "accent": "cobalt"
+        },
+        {
+          "start": 15.5,
+          "title": "RESTORE",
+          "body": "Bring files back",
+          "accent": "orange"
+        }
+      ],
+      "callout": "A backup helps only if you can restore it."
+    },
+    {
+      "start": 20.0,
+      "end": 29.0,
+      "layout": "pip",
+      "section": "YOUR CHOICE",
+      "headline": "You choose what matters",
+      "subhead": "Pick what to protect and how often to copy changes.",
+      "cards": [
+        {
+          "start": 21.0,
+          "title": "SELECT",
+          "body": "Folders or files",
+          "accent": "violet"
+        },
+        {
+          "start": 24.0,
+          "title": "REPEAT",
+          "body": "Keep copies current",
+          "accent": "cobalt"
+        }
+      ]
+    }
+  ]
+}
