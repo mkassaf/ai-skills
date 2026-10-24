@@ -1,0 +1,4 @@
+interface:
+  display_name: "Create Video with Black Slides"
+  short_description: "Black lightboard videos with speech-timed animations"
+  default_prompt: "Use $create-video-with-black-slides to turn my talking-head footage into a black lightboard explainer with animations timed to my speech."

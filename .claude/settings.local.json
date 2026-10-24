@@ -11,7 +11,9 @@
       "Bash(cp /Users/assaf/phd/ai-projects/ai-skills/skills/repomix-pattern-extraction/SKILL.md ~/.claude/skills/repomix-pattern-extraction/SKILL.md)",
       "Bash(cp -r /Users/assaf/phd/ai-projects/ai-skills/skills/repomix-pattern-extraction/patterns ~/.claude/skills/repomix-pattern-extraction/)",
       "Bash(git commit *)",
-      "Bash(git fetch *)"
+      "Bash(git fetch *)",
+      "Bash(pip3 list *)",
+      "Bash(python3 *)"
     ]
   },
   "enabledMcpjsonServers": [
